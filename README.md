@@ -1,73 +1,110 @@
-# React + TypeScript + Vite
+# 🎵 SameWave - Music Discovery Community
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A social music discovery platform where users create threads around songs and get community-driven recommendations.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🔐 **User Authentication** - Secure login/signup system
+- 🎵 **Music Search** - Powered by Deezer API with 30-second previews
+- 🧵 **Thread Creation** - Start discussions around any song
+- 💬 **Community Suggestions** - Get recommendations from other users
+- ⬆️ **Voting System** - Upvote the best suggestions
+- 👤 **User Profiles** - Track your threads and activity
+- 📱 **Responsive Design** - Works on all devices
+- 🎨 **Dark/Light Mode** - Beautiful UI with theme support
 
-## React Compiler
+## 🚀 Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Development
 
-## Expanding the ESLint configuration
+```bash
+# Install dependencies
+npm install
+cd server && npm install && cd ..
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Start both frontend and backend
+npm run dev:full
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Visit `http://localhost:5173` to see the app!
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Production Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Build frontend
+npm run build
+
+# Start backend
+cd server && npm start
 ```
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **React 19** with TypeScript
+- **Vite** for fast development
+- **Tailwind CSS** for styling
+- **Deezer API** for music data
+
+### Backend
+- **Node.js** with Express
+- **JSON file storage** (easily upgradeable to database)
+- **CORS enabled** for cross-origin requests
+- **RESTful API** design
+
+## 📁 Project Structure
+
+```
+samewave/
+├── src/                    # Frontend React app
+│   ├── components/         # React components
+│   ├── lib/               # API integrations
+│   └── App.tsx            # Main app component
+├── server/                # Backend API
+│   ├── index.js          # Express server
+│   ├── data/             # JSON data storage
+│   └── package.json      # Backend dependencies
+├── dist/                 # Built frontend
+└── README.md
+```
+
+## 🌐 Deployment
+
+Ready to deploy to production! See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+
+**Quick Deploy:**
+- Frontend: Deploy to [Vercel](https://vercel.com) 
+- Backend: Deploy to [Railway](https://railway.app)
+- Cost: **Free** with generous limits
+
+## 🎯 How It Works
+
+1. **Search** for any song using the Deezer catalog
+2. **Create threads** around songs you love
+3. **Add suggestions** for similar tracks with reasons
+4. **Vote** on the best recommendations
+5. **Discover** new music through community wisdom
+
+## 🔧 Environment Variables
+
+Create `.env` file:
+```bash
+VITE_API_BASE=http://localhost:3001/api
+```
+
+For production, update to your deployed backend URL.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+MIT License - feel free to use this project for learning or building your own music discovery platform!
+
+---
+
+Built with ❤️ for music lovers and discovery enthusiasts

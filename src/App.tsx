@@ -187,7 +187,7 @@ export default function SongMatchingPrototype() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <AppShell tab={tab} setTab={setTab} onNew={() => setShowNewThread(true)} user={user} onLogout={handleLogout}>
+      <AppShell tab={tab} setTab={setTab} user={user} onLogout={handleLogout}>
         {tab === "home" && (
           <HomeFeed
             query={query}
@@ -292,14 +292,12 @@ function AppShell({
   children,
   tab,
   setTab,
-  onNew,
   user,
   onLogout
 }: {
   children: React.ReactNode;
   tab: string;
   setTab: (t: string) => void;
-  onNew: () => void;
   user: any;
   onLogout: () => void;
 }) {
@@ -579,7 +577,7 @@ function ThreadPage({ thread, tracks, suggestions, onUpvote, onAddSuggestion, on
             <button className="rounded-xl bg-emerald-400 px-3 py-2 text-xs font-bold text-zinc-900">Follow thread</button>
           </div>
 
-          <Composer tracks={tracks} onAdd={onAddSuggestion} />
+          <Composer onAdd={onAddSuggestion} />
 
           <div className="space-y-3">
             {suggestions
@@ -608,7 +606,7 @@ function ThreadPage({ thread, tracks, suggestions, onUpvote, onAddSuggestion, on
   );
 }
 
-function Composer({ tracks, onAdd }: any) {
+function Composer({ onAdd }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
@@ -1046,7 +1044,7 @@ function FilterChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-function MiniPlayer({ url, id }: { url?: string; id: string }) {
+function MiniPlayer({ url }: { url?: string; id?: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
