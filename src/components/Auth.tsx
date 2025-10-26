@@ -187,7 +187,7 @@ export function AuthPage({ onLogin }: AuthProps) {
                   // Clear any existing errors first
                   setError('');
                   setLoading(false);
-                  
+
                   // Create demo user and login immediately
                   const demoUser = {
                     id: 'demo_user',
@@ -195,7 +195,7 @@ export function AuthPage({ onLogin }: AuthProps) {
                     email: 'demo@local',
                     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
                   };
-                  
+
                   // Login with demo user
                   onLogin(demoUser);
                 }}
