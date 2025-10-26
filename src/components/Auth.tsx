@@ -47,10 +47,31 @@ export function AuthPage({ onLogin }: AuthProps) {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      if (err.message.includes('fetch')) {
-        setError('Backend server is not running. Please start the server or use Demo Mode.');
+
+      // Handle different types of errors
+      let errorMessage = 'An error occurred. Please try again.';
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err && typeof err === 'object') {
+        if (err.message) {
+          errorMessage = err.message;
+        } else if (err.error) {
+          errorMessage = err.error;
+        } else {
+          errorMessage = 'Network error. Backend server may not be running.';
+        }
+      }
+
+      // Check for specific error types
+      if (errorMessage.toLowerCase().includes('fetch') ||
+        errorMessage.toLowerCase().includes('network') ||
+        errorMessage.toLowerCase().includes('connection')) {
+        setError('Backend server is not running. Please use Demo Mode below.');
       } else {
-        setError(err.message);
+        setError(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -171,7 +192,7 @@ export function AuthPage({ onLogin }: AuthProps) {
             </button>
           </form>
 
-          <div className="mt-6 text-center space-y-2">
+          <div className="mt-6 text-center space-y-3">
             <button
               onClick={() => {
                 setIsLogin(!isLogin);
@@ -183,30 +204,35 @@ export function AuthPage({ onLogin }: AuthProps) {
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
 
-            <button
-              onClick={() => {
-                // Temporary bypass for demo
-                const demoUser = {
-                  id: 'demo_user',
-                  username: 'demo',
-                  email: 'demo@local',
-                  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
-                };
-                onLogin(demoUser);
-              }}
-              className="block w-full text-xs text-zinc-500 hover:text-zinc-400 dark:text-zinc-400"
-            >
-              Skip Login (Demo Mode)
-            </button>
+            <div className="border-t border-zinc-200 pt-3 dark:border-zinc-700">
+              <p className="text-xs text-zinc-500 mb-2">Backend not running? No problem!</p>
+              <button
+                onClick={() => {
+                  // Clear any existing errors
+                  setError('');
+                  // Temporary bypass for demo
+                  const demoUser = {
+                    id: 'demo_user',
+                    username: 'demo',
+                    email: 'demo@local',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
+                  };
+                  onLogin(demoUser);
+                }}
+                className="w-full rounded-xl bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-800"
+              >
+                🚀 Try Demo Mode
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Demo accounts */}
-        <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
-          <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Demo Accounts</h3>
-          <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
-            <div>Email: demo@samewave.com | Password: demo123</div>
-            <div>Email: test@samewave.com | Password: test123</div>
+          {/* Demo accounts */}
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Demo Accounts</h3>
+            <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
+              <div>Email: demo@samewave.com | Password: demo123</div>
+              <div>Email: test@samewave.com | Password: test123</div>
+            </div>
           </div>
         </div>
       </div>
