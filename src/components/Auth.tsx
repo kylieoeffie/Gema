@@ -47,32 +47,8 @@ export function AuthPage({ onLogin }: AuthProps) {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-
-      // Handle different types of errors
-      let errorMessage = 'An error occurred. Please try again.';
-
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
-      } else if (err && typeof err === 'object') {
-        if (err.message) {
-          errorMessage = err.message;
-        } else if (err.error) {
-          errorMessage = err.error;
-        } else {
-          errorMessage = 'Network error. Backend server may not be running.';
-        }
-      }
-
-      // Check for specific error types
-      if (errorMessage.toLowerCase().includes('fetch') ||
-        errorMessage.toLowerCase().includes('network') ||
-        errorMessage.toLowerCase().includes('connection')) {
-        setError('Backend server is not running. Please use Demo Mode below.');
-      } else {
-        setError(errorMessage);
-      }
+      // Simple, clear error message
+      setError('Backend server is not running. Please use Demo Mode below.');
     } finally {
       setLoading(false);
     }
@@ -208,15 +184,19 @@ export function AuthPage({ onLogin }: AuthProps) {
               <p className="text-xs text-zinc-500 mb-2">Backend not running? No problem!</p>
               <button
                 onClick={() => {
-                  // Clear any existing errors
+                  // Clear any existing errors first
                   setError('');
-                  // Temporary bypass for demo
+                  setLoading(false);
+                  
+                  // Create demo user and login immediately
                   const demoUser = {
                     id: 'demo_user',
                     username: 'demo',
                     email: 'demo@local',
                     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
                   };
+                  
+                  // Login with demo user
                   onLogin(demoUser);
                 }}
                 className="w-full rounded-xl bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-800"
