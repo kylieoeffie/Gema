@@ -153,8 +153,8 @@ export default function App() {
                 {threads.length > 0 ? (
                   <div className="grid gap-4 md:grid-cols-2">
                     {threads.map((thread) => (
-                      <button 
-                        key={thread.id} 
+                      <button
+                        key={thread.id}
                         onClick={() => openThread(thread.id)}
                         className="w-full rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
                       >
@@ -238,7 +238,7 @@ export default function App() {
           )}
 
           {tab === "thread" && activeThreadId && (
-            <ThreadView 
+            <ThreadView
               thread={threads.find(t => t.id === activeThreadId)}
               suggestions={suggestions.filter(s => s.threadId === activeThreadId)}
               onBack={() => setTab("home")}
@@ -259,9 +259,9 @@ export default function App() {
                 ]);
               }}
               onUpvote={(suggestionId: string) => {
-                setSuggestions(prev => 
-                  prev.map(s => 
-                    s.id === suggestionId 
+                setSuggestions(prev =>
+                  prev.map(s =>
+                    s.id === suggestionId
                       ? { ...s, votes: s.votes + 1 }
                       : s
                   )
@@ -526,7 +526,7 @@ function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: 
 
   return (
     <div className="space-y-6">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
@@ -571,10 +571,10 @@ function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: 
                   .slice()
                   .sort((a: any, b: any) => b.votes - a.votes)
                   .map((suggestion: any) => (
-                    <RecommendationCard 
-                      key={suggestion.id} 
-                      suggestion={suggestion} 
-                      onUpvote={() => onUpvote(suggestion.id)} 
+                    <RecommendationCard
+                      key={suggestion.id}
+                      suggestion={suggestion}
+                      onUpvote={() => onUpvote(suggestion.id)}
                     />
                   ))}
               </div>
@@ -604,6 +604,7 @@ function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: 
 }
 
 function RecommendationComposer({ onAdd }: any) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
@@ -648,21 +649,51 @@ function RecommendationComposer({ onAdd }: any) {
 
   const handleAdd = () => {
     if (!selectedTrack || !reason.trim()) return;
-    
+
     onAdd(selectedTrack.id, reason, tags, selectedTrack);
-    
-    // Reset form
+
+    // Reset form and collapse
     setSearchQuery("");
     setSelectedTrack(null);
     setReason("");
     setTags([]);
     setSearchResults([]);
+    setIsExpanded(false);
   };
+
+  if (!isExpanded) {
+    return (
+      <div className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800">
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600 transition-colors"
+        >
+          <span className="text-lg">+</span>
+          Add Recommendation
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800">
-      <h3 className="text-lg font-semibold mb-4">Add a Recommendation</h3>
-      
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Add a Recommendation</h3>
+        <button
+          onClick={() => {
+            setIsExpanded(false);
+            setSearchQuery("");
+            setSelectedTrack(null);
+            setReason("");
+            setTags([]);
+            setSearchResults([]);
+          }}
+          className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          ✕
+        </button>
+      </div>
+
       <div className="space-y-4">
         {/* Track Search */}
         <div className="relative">
@@ -796,11 +827,11 @@ function RecommendationCard({ suggestion, onUpvote }: any) {
               <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{suggestion.votes}</span>
             </div>
           </div>
-          
+
           <div className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
             {suggestion.reason}
           </div>
-          
+
           {suggestion.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {suggestion.tags.map((tag: string) => (
@@ -808,7 +839,7 @@ function RecommendationCard({ suggestion, onUpvote }: any) {
               ))}
             </div>
           )}
-          
+
           {track?.previewUrl && (
             <div className="mt-3">
               <MiniPlayer url={track.previewUrl} />
