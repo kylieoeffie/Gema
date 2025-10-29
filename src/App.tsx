@@ -4,11 +4,11 @@ import { searchTracks } from "./lib/deezer";
 const getUsername = () => {
   const saved = localStorage.getItem('samewave_username');
   if (saved) return saved;
-  
+
   const adjectives = ['Cool', 'Awesome', 'Epic', 'Chill', 'Smooth', 'Dreamy', 'Vibey', 'Fresh'];
   const nouns = ['Listener', 'Vibes', 'Music', 'Beat', 'Sound', 'Wave', 'Tune', 'Melody'];
   const username = `@${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${Math.floor(Math.random() * 100)}`;
-  
+
   localStorage.setItem('samewave_username', username);
   return username;
 };
@@ -24,7 +24,7 @@ export default function App() {
   useEffect(() => {
     const savedThreads = localStorage.getItem('samewave_threads');
     const savedSuggestions = localStorage.getItem('samewave_suggestions');
-    
+
     if (savedThreads) {
       try {
         setThreads(JSON.parse(savedThreads));
@@ -32,7 +32,7 @@ export default function App() {
         console.error('Failed to load threads:', error);
       }
     }
-    
+
     if (savedSuggestions) {
       try {
         setSuggestions(JSON.parse(savedSuggestions));
@@ -61,15 +61,16 @@ export default function App() {
     };
     setThreads((t) => [newThread, ...t]);
     setActiveThreadId(newThread.id);
-    setTab("thread");
+    // Switch to home tab to see the new thread
+    setTab("home");
   };
 
   const onSearch = async () => {
-    if (!query.trim()) { 
-      setResults([]); 
-      return; 
+    if (!query.trim()) {
+      setResults([]);
+      return;
     }
-    
+
     try {
       const items = await searchTracks(query, 12);
       const mapped = items.map((t: any) => ({
@@ -123,7 +124,7 @@ export default function App() {
             </div>
           </div>
         </header>
-        
+
         <main className="py-6">
           {tab === "home" && (
             <div className="space-y-6">
@@ -141,7 +142,39 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              
+
+              <section>
+                <h2 className="mb-3 text-sm font-semibold text-zinc-600 dark:text-zinc-300">Your Threads</h2>
+                {threads.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {threads.map((thread) => (
+                      <div key={thread.id} className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800">
+                        <div className="flex items-center gap-3">
+                          <Cover artKey={thread.trackData?.title} src={thread.trackData?.cover} />
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold">
+                              {thread.trackData?.title || 'Unknown Track'} <span className="text-zinc-400">—</span> {thread.trackData?.artist || 'Unknown Artist'}
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {thread.tags.map((tag: string) => (
+                                <TagChip key={tag}>{tag}</TagChip>
+                              ))}
+                            </div>
+                            <div className="mt-2 text-xs text-zinc-500">
+                              Created {new Date(thread.createdAt).toLocaleDateString()} by {thread.createdBy}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-zinc-200 p-8 text-center shadow-sm dark:border-zinc-800">
+                    <div className="text-sm text-zinc-500">No threads yet. Search for a song and start your first thread!</div>
+                  </div>
+                )}
+              </section>
+
               <section>
                 <h2 className="mb-3 text-sm font-semibold text-zinc-600 dark:text-zinc-300">Search Results</h2>
                 {results.length > 0 ? (
@@ -169,7 +202,7 @@ export default function App() {
               </section>
             </div>
           )}
-          
+
           {tab === "search" && (
             <div className="space-y-6">
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
@@ -186,7 +219,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {results.map((track) => (
                   <SearchResult key={track.id} track={track} threads={threads} onStartThread={addThread} />
@@ -195,7 +228,7 @@ export default function App() {
             </div>
           )}
         </main>
-        
+
         <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200/60 bg-white/90 p-2 backdrop-blur md:hidden dark:border-zinc-800 dark:bg-zinc-900/70">
           <div className="mx-auto grid max-w-lg grid-cols-2 gap-2">
             <button
@@ -317,11 +350,10 @@ function MiniPlayer({ url }: { url?: string }) {
       <button
         onClick={toggle}
         disabled={error}
-        className={`grid h-8 w-8 place-items-center rounded-full border text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
-          error
+        className={`grid h-8 w-8 place-items-center rounded-full border text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 ${error
             ? 'border-red-300 text-red-500 cursor-not-allowed'
             : 'border-zinc-300 dark:border-zinc-700'
-        }`}
+          }`}
       >
         {error ? "✕" : (playing ? "❚❚" : "▶")}
       </button>
@@ -336,6 +368,7 @@ function MiniPlayer({ url }: { url?: string }) {
 function SearchResult({ track, threads, onStartThread }: any) {
   const [showTagSelector, setShowTagSelector] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [justCreated, setJustCreated] = useState(false);
   const existing = threads.find((t: any) => t.seedTrackId === track.id);
 
   const toggleTag = (tag: string) => {
@@ -351,6 +384,9 @@ function SearchResult({ track, threads, onStartThread }: any) {
     onStartThread(track.id, selectedTags.length > 0 ? selectedTags : ["Chill"], track);
     setShowTagSelector(false);
     setSelectedTags([]);
+    setJustCreated(true);
+    // Reset success state after 3 seconds
+    setTimeout(() => setJustCreated(false), 3000);
   };
 
   return (
@@ -371,9 +407,9 @@ function SearchResult({ track, threads, onStartThread }: any) {
             <TagChip key={m}>{m}</TagChip>
           ))}
         </div>
-        {existing ? (
+        {existing || justCreated ? (
           <button className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-bold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900">
-            Open thread
+            {justCreated ? "✓ Thread Created!" : "Open thread"}
           </button>
         ) : (
           <button onClick={() => setShowTagSelector(true)} className="rounded-xl bg-emerald-400 px-3 py-2 text-xs font-bold text-zinc-900">
