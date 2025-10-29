@@ -14,6 +14,9 @@ const getUsername = () => {
 };
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const [tab, setTab] = useState("home");
   const [query, setQuery] = useState("");
   const [threads, setThreads] = useState<any[]>([]);
@@ -22,6 +25,19 @@ export default function App() {
   const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
+    // Check for existing authentication
+    const savedUser = localStorage.getItem('samewave_user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Failed to load user:', error);
+        localStorage.removeItem('samewave_user');
+      }
+    }
+
     const savedThreads = localStorage.getItem('samewave_threads');
     const savedSuggestions = localStorage.getItem('samewave_suggestions');
 
@@ -50,12 +66,75 @@ export default function App() {
     localStorage.setItem('samewave_suggestions', JSON.stringify(suggestions));
   }, [suggestions]);
 
+  const handleLogin = (email: string, password: string) => {
+    // Simple authentication - in real app, this would call an API
+    const users = JSON.parse(localStorage.getItem('samewave_users') || '[]');
+    const user = users.find((u: any) => u.email === email && u.password === password);
+    
+    if (user) {
+      setCurrentUser(user);
+      setIsAuthenticated(true);
+      setShowAuth(false);
+      localStorage.setItem('samewave_user', JSON.stringify(user));
+      return { success: true };
+    } else {
+      return { success: false, error: 'Invalid email or password' };
+    }
+  };
+
+  const handleSignup = (email: string, password: string, username: string) => {
+    // Simple registration - in real app, this would call an API
+    const users = JSON.parse(localStorage.getItem('samewave_users') || '[]');
+    
+    if (users.find((u: any) => u.email === email)) {
+      return { success: false, error: 'Email already exists' };
+    }
+    
+    if (users.find((u: any) => u.username === username)) {
+      return { success: false, error: 'Username already taken' };
+    }
+
+    const newUser = {
+      id: `user_${Math.random().toString(36).slice(2, 7)}`,
+      email,
+      password, // In real app, this would be hashed
+      username: username.startsWith('@') ? username : `@${username}`,
+      createdAt: Date.now()
+    };
+
+    users.push(newUser);
+    localStorage.setItem('samewave_users', JSON.stringify(users));
+    
+    setCurrentUser(newUser);
+    setIsAuthenticated(true);
+    setShowAuth(false);
+    localStorage.setItem('samewave_user', JSON.stringify(newUser));
+    
+    return { success: true };
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('samewave_user');
+    setTab("home");
+  };
+
+  const getCurrentUsername = () => {
+    return currentUser?.username || getUsername();
+  };
+
   const addThread = (seedTrackId: string, tags: string[], trackData?: any) => {
+    if (!isAuthenticated) {
+      setShowAuth(true);
+      return;
+    }
+
     const newThread = {
       id: `thr_${Math.random().toString(36).slice(2, 7)}`,
       seedTrackId,
       tags,
-      createdBy: getUsername(),
+      createdBy: getCurrentUsername(),
       createdAt: Date.now(),
       trackData
     };
@@ -107,25 +186,48 @@ export default function App() {
               <span className="text-lg font-semibold tracking-tight">SameWave</span>
               <span className="ml-2 text-xs text-zinc-500">prototype</span>
             </div>
-            <div className="hidden items-center gap-2 md:flex">
-              <button
-                onClick={() => setTab("home")}
-                className={
-                  "rounded-xl px-3 py-2 text-sm font-medium " +
-                  (tab === "home" ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-100 dark:hover:bg-zinc-800")
-                }
-              >
-                Home
-              </button>
-              <button
-                onClick={() => setTab("search")}
-                className={
-                  "rounded-xl px-3 py-2 text-sm font-medium " +
-                  (tab === "search" ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-100 dark:hover:bg-zinc-800")
-                }
-              >
-                Search
-              </button>
+            <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-2 md:flex">
+                <button
+                  onClick={() => setTab("home")}
+                  className={
+                    "rounded-xl px-3 py-2 text-sm font-medium " +
+                    (tab === "home" ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-100 dark:hover:bg-zinc-800")
+                  }
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => setTab("search")}
+                  className={
+                    "rounded-xl px-3 py-2 text-sm font-medium " +
+                    (tab === "search" ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-100 dark:hover:bg-zinc-800")
+                  }
+                >
+                  Search
+                </button>
+              </div>
+              
+              {isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {currentUser?.username}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="rounded-xl px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+                >
+                  Login
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -241,8 +343,14 @@ export default function App() {
             <ThreadView
               thread={threads.find(t => t.id === activeThreadId)}
               suggestions={suggestions.filter(s => s.threadId === activeThreadId)}
+              isAuthenticated={isAuthenticated}
               onBack={() => setTab("home")}
+              onShowAuth={() => setShowAuth(true)}
               onAddSuggestion={(trackId: string, reason: string, tags: string[], trackData?: any) => {
+                if (!isAuthenticated) {
+                  setShowAuth(true);
+                  return;
+                }
                 setSuggestions(prev => [
                   {
                     id: `s_${Math.random().toString(36).slice(2, 7)}`,
@@ -250,7 +358,7 @@ export default function App() {
                     trackId,
                     reason,
                     tags,
-                    createdBy: getUsername(),
+                    createdBy: getCurrentUsername(),
                     createdAt: Date.now(),
                     votes: 0,
                     trackData
@@ -259,6 +367,10 @@ export default function App() {
                 ]);
               }}
               onUpvote={(suggestionId: string) => {
+                if (!isAuthenticated) {
+                  setShowAuth(true);
+                  return;
+                }
                 setSuggestions(prev =>
                   prev.map(s =>
                     s.id === suggestionId
@@ -294,6 +406,14 @@ export default function App() {
           </div>
         </nav>
       </div>
+
+      {showAuth && (
+        <AuthModal 
+          onClose={() => setShowAuth(false)}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
+      )}
     </div>
   );
 }
@@ -507,7 +627,7 @@ function TagChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: any) {
+function ThreadView({ thread, suggestions, isAuthenticated, onBack, onShowAuth, onAddSuggestion, onUpvote }: any) {
   if (!thread) {
     return (
       <div className="rounded-2xl border border-zinc-200 p-8 text-center shadow-sm dark:border-zinc-800">
@@ -560,7 +680,11 @@ function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: 
           </div>
 
           {/* Add Recommendation */}
-          <RecommendationComposer onAdd={onAddSuggestion} />
+          <RecommendationComposer 
+            isAuthenticated={isAuthenticated}
+            onAdd={onAddSuggestion}
+            onShowAuth={onShowAuth}
+          />
 
           {/* Recommendations List */}
           <div className="space-y-4">
@@ -603,7 +727,7 @@ function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: 
   );
 }
 
-function RecommendationComposer({ onAdd }: any) {
+function RecommendationComposer({ isAuthenticated, onAdd, onShowAuth }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -665,11 +789,11 @@ function RecommendationComposer({ onAdd }: any) {
     return (
       <div className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800">
         <button
-          onClick={() => setIsExpanded(true)}
+          onClick={() => isAuthenticated ? setIsExpanded(true) : onShowAuth()}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600 transition-colors"
         >
           <span className="text-lg">+</span>
-          Add Recommendation
+          {isAuthenticated ? "Add Recommendation" : "Login to Add Recommendation"}
         </button>
       </div>
     );
@@ -845,6 +969,148 @@ function RecommendationCard({ suggestion, onUpvote }: any) {
               <MiniPlayer url={track.previewUrl} />
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthModal({ onClose, onLogin, onSignup }: any) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        const result = onLogin(email, password);
+        if (!result.success) {
+          setError(result.error);
+        }
+      } else {
+        if (!username.trim()) {
+          setError("Username is required");
+          return;
+        }
+        const result = onSignup(email, password, username);
+        if (!result.success) {
+          setError(result.error);
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const switchMode = () => {
+    setIsLogin(!isLogin);
+    setError("");
+    setEmail("");
+    setPassword("");
+    setUsername("");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold">
+            {isLogin ? "Welcome Back" : "Join SameWave"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="w-full rounded-xl border border-zinc-300 bg-white p-3 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              required
+            />
+          </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="@cooluser"
+                className="w-full rounded-xl border border-zinc-300 bg-white p-3 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                required
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-xl border border-zinc-300 bg-white p-3 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "..." : (isLogin ? "Sign In" : "Create Account")}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={switchMode}
+            className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+          >
+            {isLogin 
+              ? "Don't have an account? Sign up" 
+              : "Already have an account? Sign in"
+            }
+          </button>
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-zinc-500">
+            {isLogin 
+              ? "Sign in to create threads and add recommendations"
+              : "Join the community to discover and share music"
+            }
+          </p>
         </div>
       </div>
     </div>
