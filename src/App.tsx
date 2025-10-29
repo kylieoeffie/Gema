@@ -18,7 +18,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [threads, setThreads] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [, setActiveThreadId] = useState("");
+  const [activeThreadId, setActiveThreadId] = useState("");
   const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
@@ -61,8 +61,13 @@ export default function App() {
     };
     setThreads((t) => [newThread, ...t]);
     setActiveThreadId(newThread.id);
-    // Switch to home tab to see the new thread
-    setTab("home");
+    // Switch to thread view to see the new thread
+    setTab("thread");
+  };
+
+  const openThread = (threadId: string) => {
+    setActiveThreadId(threadId);
+    setTab("thread");
   };
 
   const onSearch = async () => {
@@ -148,7 +153,11 @@ export default function App() {
                 {threads.length > 0 ? (
                   <div className="grid gap-4 md:grid-cols-2">
                     {threads.map((thread) => (
-                      <div key={thread.id} className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800">
+                      <button 
+                        key={thread.id} 
+                        onClick={() => openThread(thread.id)}
+                        className="w-full rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
+                      >
                         <div className="flex items-center gap-3">
                           <Cover artKey={thread.trackData?.title} src={thread.trackData?.cover} />
                           <div className="min-w-0">
@@ -165,7 +174,7 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -226,6 +235,39 @@ export default function App() {
                 ))}
               </div>
             </div>
+          )}
+
+          {tab === "thread" && activeThreadId && (
+            <ThreadView 
+              thread={threads.find(t => t.id === activeThreadId)}
+              suggestions={suggestions.filter(s => s.threadId === activeThreadId)}
+              onBack={() => setTab("home")}
+              onAddSuggestion={(trackId: string, reason: string, tags: string[], trackData?: any) => {
+                setSuggestions(prev => [
+                  {
+                    id: `s_${Math.random().toString(36).slice(2, 7)}`,
+                    threadId: activeThreadId,
+                    trackId,
+                    reason,
+                    tags,
+                    createdBy: getUsername(),
+                    createdAt: Date.now(),
+                    votes: 0,
+                    trackData
+                  },
+                  ...prev
+                ]);
+              }}
+              onUpvote={(suggestionId: string) => {
+                setSuggestions(prev => 
+                  prev.map(s => 
+                    s.id === suggestionId 
+                      ? { ...s, votes: s.votes + 1 }
+                      : s
+                  )
+                );
+              }}
+            />
           )}
         </main>
 
@@ -351,8 +393,8 @@ function MiniPlayer({ url }: { url?: string }) {
         onClick={toggle}
         disabled={error}
         className={`grid h-8 w-8 place-items-center rounded-full border text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 ${error
-            ? 'border-red-300 text-red-500 cursor-not-allowed'
-            : 'border-zinc-300 dark:border-zinc-700'
+          ? 'border-red-300 text-red-500 cursor-not-allowed'
+          : 'border-zinc-300 dark:border-zinc-700'
           }`}
       >
         {error ? "✕" : (playing ? "❚❚" : "▶")}
@@ -462,5 +504,318 @@ function TagChip({ children }: { children: React.ReactNode }) {
     <span className="rounded-lg bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
       {children}
     </span>
+  );
+}
+
+function ThreadView({ thread, suggestions, onBack, onAddSuggestion, onUpvote }: any) {
+  if (!thread) {
+    return (
+      <div className="rounded-2xl border border-zinc-200 p-8 text-center shadow-sm dark:border-zinc-800">
+        <div className="text-sm text-zinc-500">Thread not found</div>
+        <button
+          onClick={onBack}
+          className="mt-4 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  const seed = thread.trackData;
+
+  return (
+    <div className="space-y-6">
+      <button 
+        onClick={onBack}
+        className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+      >
+        <span className="text-lg">←</span>
+        Back to Home
+      </button>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-6">
+          {/* Thread Header */}
+          <div className="rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800">
+            <div className="flex items-start gap-4">
+              <Cover artKey={seed?.title} src={seed?.cover} />
+              <div className="flex-1">
+                <div className="text-xl font-bold">
+                  {seed?.title || 'Unknown Track'} <span className="text-zinc-400">—</span> {seed?.artist || 'Unknown Artist'}
+                </div>
+                <div className="mt-1 text-sm text-zinc-500">{seed?.year} • by {thread.createdBy}</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {thread.tags.map((tag: string) => (
+                    <span key={tag} className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <MiniPlayer url={seed?.previewUrl} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Add Recommendation */}
+          <RecommendationComposer onAdd={onAddSuggestion} />
+
+          {/* Recommendations List */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Recommendations ({suggestions.length})</h3>
+            {suggestions.length > 0 ? (
+              <div className="space-y-3">
+                {suggestions
+                  .slice()
+                  .sort((a: any, b: any) => b.votes - a.votes)
+                  .map((suggestion: any) => (
+                    <RecommendationCard 
+                      key={suggestion.id} 
+                      suggestion={suggestion} 
+                      onUpvote={() => onUpvote(suggestion.id)} 
+                    />
+                  ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-zinc-200 p-8 text-center shadow-sm dark:border-zinc-800">
+                <div className="text-sm text-zinc-500">No recommendations yet. Be the first to add one!</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800">
+            <h4 className="text-sm font-semibold mb-3">Thread Info</h4>
+            <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+              <div>Created: {new Date(thread.createdAt).toLocaleDateString()}</div>
+              <div>Creator: {thread.createdBy}</div>
+              <div>Recommendations: {suggestions.length}</div>
+              <div>Total Votes: {suggestions.reduce((sum: number, s: any) => sum + s.votes, 0)}</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function RecommendationComposer({ onAdd }: any) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedTrack, setSelectedTrack] = useState<any>(null);
+  const [reason, setReason] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const toggleTag = (tag: string) => {
+    setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
+
+  const searchForTracks = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const items = await searchTracks(searchQuery, 8);
+      const mapped = items.map((t: any) => ({
+        id: t.id,
+        title: t.name,
+        artist: (t.artists || []).map((a: any) => a.name).join(", "),
+        year: (t.album?.release_date || "").slice(0, 4) || "",
+        previewUrl: t.preview_url || undefined,
+        cover: t.album?.images?.[1]?.url || t.album?.images?.[0]?.url,
+      }));
+      setSearchResults(mapped);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setSearchResults([]);
+    }
+    setIsSearching(false);
+  };
+
+  const selectTrack = (track: any) => {
+    setSelectedTrack(track);
+    setSearchQuery(`${track.title} — ${track.artist}`);
+    setSearchResults([]);
+  };
+
+  const handleAdd = () => {
+    if (!selectedTrack || !reason.trim()) return;
+    
+    onAdd(selectedTrack.id, reason, tags, selectedTrack);
+    
+    // Reset form
+    setSearchQuery("");
+    setSelectedTrack(null);
+    setReason("");
+    setTags([]);
+    setSearchResults([]);
+  };
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800">
+      <h3 className="text-lg font-semibold mb-4">Add a Recommendation</h3>
+      
+      <div className="space-y-4">
+        {/* Track Search */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            Search for a song
+          </label>
+          <div className="relative">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && searchForTracks()}
+              placeholder="Search for a song to recommend..."
+              className="w-full rounded-xl border border-zinc-300 bg-white p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <button
+              onClick={searchForTracks}
+              disabled={isSearching}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-emerald-400 px-3 py-1 text-xs font-bold text-zinc-900 hover:bg-emerald-300 disabled:opacity-50"
+            >
+              {isSearching ? "..." : "Search"}
+            </button>
+          </div>
+
+          {searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-60 overflow-y-auto rounded-xl border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              {searchResults.map((track) => (
+                <button
+                  key={track.id}
+                  onClick={() => selectTrack(track)}
+                  className="flex w-full items-center gap-3 p-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                >
+                  <Cover artKey={track.title} src={track.cover} small />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{track.title}</div>
+                    <div className="truncate text-xs text-zinc-500">{track.artist}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Reason */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            Why do you recommend this? *
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g., Similar dreamy atmosphere, same producer, matching energy..."
+            className="w-full rounded-xl border border-zinc-300 bg-white p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            rows={3}
+          />
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            Tags (optional)
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {["Similar Vibe", "Same Artist", "Same Genre", "Same Era", "Similar Energy", "Same Producer"].map((tag) => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={
+                  "rounded-lg px-3 py-1 text-xs font-medium " +
+                  (tags.includes(tag)
+                    ? "bg-emerald-500 text-white"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700")
+                }
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedTrack(null);
+              setReason("");
+              setTags([]);
+              setSearchResults([]);
+            }}
+            className="rounded-xl px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            Clear
+          </button>
+          <button
+            onClick={handleAdd}
+            disabled={!selectedTrack || !reason.trim()}
+            className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add Recommendation
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecommendationCard({ suggestion, onUpvote }: any) {
+  const track = suggestion.trackData;
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800">
+      <div className="flex items-start gap-4">
+        <Cover artKey={track?.title} src={track?.cover} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">
+                {track?.title || 'Unknown Track'} <span className="text-zinc-400">—</span> {track?.artist || 'Unknown Artist'}
+              </div>
+              <div className="mt-1 text-xs text-zinc-500">
+                Recommended by {suggestion.createdBy} • {new Date(suggestion.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1 ml-4">
+              <button
+                onClick={onUpvote}
+                className="rounded-lg bg-emerald-100 hover:bg-emerald-200 p-2 text-emerald-700 dark:bg-emerald-900 dark:hover:bg-emerald-800 dark:text-emerald-300"
+              >
+                <span className="text-sm">▲</span>
+              </button>
+              <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{suggestion.votes}</span>
+            </div>
+          </div>
+          
+          <div className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
+            {suggestion.reason}
+          </div>
+          
+          {suggestion.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {suggestion.tags.map((tag: string) => (
+                <TagChip key={tag}>{tag}</TagChip>
+              ))}
+            </div>
+          )}
+          
+          {track?.previewUrl && (
+            <div className="mt-3">
+              <MiniPlayer url={track.previewUrl} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
