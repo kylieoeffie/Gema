@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { searchTracks } from "./lib/deezer";
 
 const getUsername = () => {
-  const saved = localStorage.getItem('samewave_username');
+  const saved = localStorage.getItem('gema_username');
   if (saved) return saved;
 
   const adjectives = ['Cool', 'Awesome', 'Epic', 'Chill', 'Smooth', 'Dreamy', 'Vibey', 'Fresh'];
   const nouns = ['Listener', 'Vibes', 'Music', 'Beat', 'Sound', 'Wave', 'Tune', 'Melody'];
   const username = `@${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${Math.floor(Math.random() * 100)}`;
 
-  localStorage.setItem('samewave_username', username);
+  localStorage.setItem('gema_username', username);
   return username;
 };
 
@@ -26,7 +26,7 @@ export default function App() {
 
   useEffect(() => {
     // Check for existing authentication
-    const savedUser = localStorage.getItem('samewave_user');
+    const savedUser = localStorage.getItem('gema_user');
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
@@ -34,12 +34,12 @@ export default function App() {
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Failed to load user:', error);
-        localStorage.removeItem('samewave_user');
+        localStorage.removeItem('gema_user');
       }
     }
 
-    const savedThreads = localStorage.getItem('samewave_threads');
-    const savedSuggestions = localStorage.getItem('samewave_suggestions');
+    const savedThreads = localStorage.getItem('gema_threads');
+    const savedSuggestions = localStorage.getItem('gema_suggestions');
 
     if (savedThreads) {
       try {
@@ -59,23 +59,23 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('samewave_threads', JSON.stringify(threads));
+    localStorage.setItem('gema_threads', JSON.stringify(threads));
   }, [threads]);
 
   useEffect(() => {
-    localStorage.setItem('samewave_suggestions', JSON.stringify(suggestions));
+    localStorage.setItem('gema_suggestions', JSON.stringify(suggestions));
   }, [suggestions]);
 
   const handleLogin = (email: string, password: string) => {
     // Simple authentication - in real app, this would call an API
-    const users = JSON.parse(localStorage.getItem('samewave_users') || '[]');
+    const users = JSON.parse(localStorage.getItem('gema_users') || '[]');
     const user = users.find((u: any) => u.email === email && u.password === password);
-    
+
     if (user) {
       setCurrentUser(user);
       setIsAuthenticated(true);
       setShowAuth(false);
-      localStorage.setItem('samewave_user', JSON.stringify(user));
+      localStorage.setItem('gema_user', JSON.stringify(user));
       return { success: true };
     } else {
       return { success: false, error: 'Invalid email or password' };
@@ -84,12 +84,12 @@ export default function App() {
 
   const handleSignup = (email: string, password: string, username: string) => {
     // Simple registration - in real app, this would call an API
-    const users = JSON.parse(localStorage.getItem('samewave_users') || '[]');
-    
+    const users = JSON.parse(localStorage.getItem('gema_users') || '[]');
+
     if (users.find((u: any) => u.email === email)) {
       return { success: false, error: 'Email already exists' };
     }
-    
+
     if (users.find((u: any) => u.username === username)) {
       return { success: false, error: 'Username already taken' };
     }
@@ -103,20 +103,20 @@ export default function App() {
     };
 
     users.push(newUser);
-    localStorage.setItem('samewave_users', JSON.stringify(users));
-    
+    localStorage.setItem('gema_users', JSON.stringify(users));
+
     setCurrentUser(newUser);
     setIsAuthenticated(true);
     setShowAuth(false);
-    localStorage.setItem('samewave_user', JSON.stringify(newUser));
-    
+    localStorage.setItem('gema_user', JSON.stringify(newUser));
+
     return { success: true };
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('samewave_user');
+    localStorage.removeItem('gema_user');
     setTab("home");
   };
 
@@ -181,10 +181,9 @@ export default function App() {
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="grid h-7 w-7 place-items-center rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-                <span className="text-xs font-black">SW</span>
+                <span className="text-xs font-black">G</span>
               </div>
-              <span className="text-lg font-semibold tracking-tight">SameWave</span>
-              <span className="ml-2 text-xs text-zinc-500">prototype</span>
+              <span className="text-lg font-semibold tracking-tight">Gema</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="hidden items-center gap-2 md:flex">
@@ -207,7 +206,7 @@ export default function App() {
                   Search
                 </button>
               </div>
-              
+
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-zinc-600 dark:text-zinc-300">
@@ -408,7 +407,7 @@ export default function App() {
       </div>
 
       {showAuth && (
-        <AuthModal 
+        <AuthModal
           onClose={() => setShowAuth(false)}
           onLogin={handleLogin}
           onSignup={handleSignup}
@@ -680,7 +679,7 @@ function ThreadView({ thread, suggestions, isAuthenticated, onBack, onShowAuth, 
           </div>
 
           {/* Add Recommendation */}
-          <RecommendationComposer 
+          <RecommendationComposer
             isAuthenticated={isAuthenticated}
             onAdd={onAddSuggestion}
             onShowAuth={onShowAuth}
@@ -1022,7 +1021,7 @@ function AuthModal({ onClose, onLogin, onSignup }: any) {
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">
-            {isLogin ? "Welcome Back" : "Join SameWave"}
+            {isLogin ? "Welcome Back" : "Join Gema"}
           </h2>
           <button
             onClick={onClose}
@@ -1097,8 +1096,8 @@ function AuthModal({ onClose, onLogin, onSignup }: any) {
             onClick={switchMode}
             className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
           >
-            {isLogin 
-              ? "Don't have an account? Sign up" 
+            {isLogin
+              ? "Don't have an account? Sign up"
               : "Already have an account? Sign in"
             }
           </button>
@@ -1106,7 +1105,7 @@ function AuthModal({ onClose, onLogin, onSignup }: any) {
 
         <div className="mt-4 text-center">
           <p className="text-xs text-zinc-500">
-            {isLogin 
+            {isLogin
               ? "Sign in to create threads and add recommendations"
               : "Join the community to discover and share music"
             }
