@@ -3,7 +3,6 @@ const DEEZER_API_BASE = 'https://api.deezer.com';
 
 export async function searchTracks(query: string, limit = 12) {
   try {
-    // Try multiple CORS proxy services
     const proxies = [
       'https://api.allorigins.win/raw?url=',
       'https://corsproxy.io/?',
@@ -21,7 +20,6 @@ export async function searchTracks(query: string, limit = 12) {
         
         const data = await response.json();
         
-        // Transform Deezer data to match our expected format
         return (data?.data || []).map((track: any) => ({
           id: track.id.toString(),
           name: track.title,
@@ -51,11 +49,9 @@ export async function searchTracks(query: string, limit = 12) {
   } catch (error) {
     console.error('Deezer search error:', error);
     
-    // Fallback to direct Deezer API (might have CORS issues)
     try {
       const fallbackUrl = `${DEEZER_API_BASE}/search?q=${encodeURIComponent(query)}&limit=${limit}&output=jsonp`;
       
-      // Use JSONP for CORS bypass
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         const callbackName = 'deezer_callback_' + Math.random().toString(36).substr(2, 9);

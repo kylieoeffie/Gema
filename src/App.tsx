@@ -67,7 +67,6 @@ export default function App() {
   }, [suggestions]);
 
   const handleLogin = (email: string, password: string) => {
-    // Simple authentication - in real app, this would call an API
     const users = JSON.parse(localStorage.getItem('gema_users') || '[]');
     const user = users.find((u: any) => u.email === email && u.password === password);
 
@@ -83,7 +82,6 @@ export default function App() {
   };
 
   const handleSignup = (email: string, password: string, username: string) => {
-    // Simple registration - in real app, this would call an API
     const users = JSON.parse(localStorage.getItem('gema_users') || '[]');
 
     if (users.find((u: any) => u.email === email)) {
