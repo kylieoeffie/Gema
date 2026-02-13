@@ -8,11 +8,41 @@ I created Gema because I wanted a place where music lovers could discover new so
 # Install dependencies
 npm install
 
-# Start the app
+# Start the frontend
 npm run dev
 ```
 
 Visit `http://localhost:5173` to start discovering music!
+
+## Run Frontend + Backend
+
+### Option 1: Run both with one command
+
+```bash
+# from project root
+npm run dev:full
+```
+
+This starts:
+- Backend API on `http://localhost:3001`
+- Frontend on `http://localhost:5173`
+
+### Option 2: Run in separate terminals
+
+Terminal 1 (backend):
+
+```bash
+# from project root
+npm run setup
+npm run backend
+```
+
+Terminal 2 (frontend):
+
+```bash
+# from project root
+npm run dev
+```
 
 ## How It Works
 
